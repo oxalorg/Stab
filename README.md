@@ -1,7 +1,7 @@
 # Stab
 
 Start blogging w/ this Simple static blog generator.
-Stab w/ Stab.
+Stab w/ Stab in only 64 lines of code.
 
 ## RIGHT NOW.
 
@@ -29,6 +29,7 @@ pip3 install pyyaml mistune jinja2 pygments
   by your templates.
 * The one in this repo only required a `title` and `date`
   values.
+* Find examples in the `./blog` directory of this repo.
 
 ***Build your blog***:
 
@@ -39,7 +40,7 @@ python3 stab.py
 ***Deploy it***:
 
 ```
-rsync -avz --exclude '_*' --exclude '.git*' --exclude 'venv*' --exclude '*.md' `pwd`/ ~/Desktop/stab/
+rsync -avz --exclude '_*' --exclude '.git*' --exclude 'venv*' --exclude '*.md' `pwd`/ rogue@oxal.org:/var/www/website/public/
 ```
 
 ## TODO
