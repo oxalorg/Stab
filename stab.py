@@ -25,6 +25,7 @@ jinja_loader = FileSystemLoader(TEMPLATE_DIR)
 jinja_env = Environment(loader=jinja_loader)
 jinja_env.filters['datetimeformat'] = lambda x, y: x.strftime(y)
 
+
 class HighlightRenderer(mistune.Renderer):
     def block_code(self, code, lang):
         if not lang:
@@ -48,7 +49,6 @@ def extract(fpath):
             else:
                 content.append(line)
         try:
-            print(meta, content)
             return yaml.load('\n'.join(meta)), '\n'.join(content)
         except:
             raise SystemExit('File with invalid yaml meta block: ' + fpath)
