@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block body %}
+{% if collections %}
+<h2>Collections</h2>
+<ul>
+{% for coll in collections %}
+<li style="padding-bottom:7px;">
+    <a class="no-border" href="{{ coll.slug }}" title="{{ coll.title }}">{{ coll.title }} </a>
+    {#<!-- <small><em><span class="sakura-blossom inline-block">-{{ coll.date | datetimeformat('%d %b') }}</span></em></small> -->#}
+</li>
+{% endfor %}
+</ul>
+{% endif %}
+{% for post in posts %}
+{% set post_year %}{{ post.date | datetimeformat('%Y') }}{% endset %}
+    {% if loop.first %}
+        <h2>{{ post_year }}</h2>
+        <div>
+            <ul>
+    {% endif %}
+    {% if loop.first == false %}
+        {% set previous_index = loop.index0 - 1 %}
+        {% set previous_post_year %}{{ posts[previous_index].date | datetimeformat('%Y') }}{% endset %}
+        {% if post_year != previous_post_year %}
+        </div>
+        <h2>{{ post_year }}</h2>
+        <div>
+            <ul>
+        {% endif %}
+    {% endif %}
+                <li style="padding-bottom:7px;">
+                    <a class="no-border" href="{{ post.slug }}" title="{{ post.title }}">{{ post.title }} </a><small><em><span class="sakura-blossom inline-block">-{{ post.date | datetimeformat('%d %b') }}</span></em></small>
+                </li>
+    {% if loop.last %}
+            </ul>
+        </div>
+    {% endif %}
+{% endfor %}
+{% endblock %}

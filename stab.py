@@ -1,23 +1,77 @@
 #!/usr/bin/env python3
 import os
 import sys
-import markdown
 import yaml
+import mistune
+from pygments import highlight
+from pygments.lexers import get_lexer_by_name
+from pygments.formatters import html
+from jinja2 import Environment, FileSystemLoader
+
+ALLOWED = {'.md', '.mkd', '.markdown'}
+is_allowed = lambda x: os.path.splitext(x)[1] in ALLOWED
 
 absjoin = lambda x, y: os.path.abspath(os.path.join(x, y))
 ROOT_DIR = os.getcwd()
-OUTPUT_DIR = absjoin(ROOT_DIR, '_site')
-config = yaml.load(open(absjoin(ROOT_DIR, '_config.yml')).read())
-blog_dir = absjoin(ROOT_DIR, config.get('blog_dir', 'blog'))
+OUT_DIR = absjoin(ROOT_DIR, '_site')
+TEMPLATE_DIR = absjoin(ROOT_DIR, '_layouts')
 
-def extract_meta(fpath):
-    meta = []
-    first_line = True
+config = yaml.load(open(absjoin(ROOT_DIR, '_config.yml')).read())
+blog_dir_name = config.get('blog_dir', 'blog')
+blog_dir = absjoin(ROOT_DIR, blog_dir_name)
+default_template = config.get('layout', 'post.html')
+
+jinja_loader = FileSystemLoader(TEMPLATE_DIR)
+jinja_env = Environment(loader=jinja_loader)
+jinja_env.filters['datetimeformat'] = lambda x, y: x.strftime(y)
+
+class HighlightRenderer(mistune.Renderer):
+    def block_code(self, code, lang):
+        if not lang:
+            return '\n<pre><code>%s</code></pre>\n' % \
+                mistune.escape(code)
+        lexer = get_lexer_by_name(lang, stripall=True)
+        formatter = html.HtmlFormatter()
+        return highlight(code, lexer, formatter)
+
+
+def extract(fpath):
+    meta, content, first_line, meta_parsed = [], [], True, False
     with open(fpath) as fp:
         for line in fp:
-            if line.strip() == '---' :
+            if line.strip() == '---' and not meta_parsed:
                 if not first_line:
-                    return yaml.load(''.join(meta))
+                    meta_parsed = True
                 first_line = False
-            meta.append(line)
-        raise SystemExit('File with invalid yaml meta block: ' + fpath)
+            elif not meta_parsed:
+                meta.append(line)
+            else:
+                content.append(line)
+        try:
+            print(meta, content)
+            return yaml.load('\n'.join(meta)), '\n'.join(content)
+        except:
+            raise SystemExit('File with invalid yaml meta block: ' + fpath)
+
+
+def build_blog(markdown):
+    for fname in os.listdir(blog_dir):
+        fpath = absjoin(blog_dir, fname)
+        if os.path.isfile(fpath) and is_allowed(fname):
+            meta, content = extract(fpath)
+            html = markdown(content)
+            template = meta.get('layout', default_template)
+            templater = jinja_env.get_template(template)
+            info = config.copy()
+            info['content'] = html
+            info.update(meta)
+            with open(absjoin(blog_dir, os.path.splitext(fname)[0] + '.html'), 'w') as fp:
+                fp.write(templater.render(info))
+
+
+def main():
+    markdown = mistune.Markdown(renderer=HighlightRenderer())
+    build_blog(markdown)
+
+if __name__ == '__main__':
+    main()
