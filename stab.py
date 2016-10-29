@@ -3,10 +3,8 @@ import os
 import sys
 import yaml
 import mistune
-from pygments import highlight
-from pygments.lexers import get_lexer_by_name
-from pygments.formatters import html
 from jinja2 import Environment, FileSystemLoader
+import importlib
 
 ALLOWED = {'.md', '.mkd', '.markdown'}
 is_allowed = lambda x: os.path.splitext(x)[1] in ALLOWED
@@ -19,21 +17,24 @@ TEMPLATE_DIR = absjoin(ROOT_DIR, '_layouts')
 config = yaml.load(open(absjoin(ROOT_DIR, '_config.yml')).read())
 blog_dir_name = config.get('blog_dir', 'blog')
 blog_dir = absjoin(ROOT_DIR, blog_dir_name)
-default_template = config.get('layout', 'post.html')
+default_template = config.get('layout', 'post')
+plugins_dir_name = config.get('plugins_dir', '_plugins')
 
 jinja_loader = FileSystemLoader(TEMPLATE_DIR)
 jinja_env = Environment(loader=jinja_loader)
 jinja_env.filters['datetimeformat'] = lambda x, y: x.strftime(y)
 
 
-class HighlightRenderer(mistune.Renderer):
-    def block_code(self, code, lang):
-        if not lang:
-            return '\n<pre><code>%s</code></pre>\n' % \
-                mistune.escape(code)
-        lexer = get_lexer_by_name(lang, stripall=True)
-        formatter = html.HtmlFormatter()
-        return highlight(code, lexer, formatter)
+class Plugin:
+    pass
+
+
+class Render(Plugin):
+    def __init__(self):
+        self.markdown = mistune.Markdown()
+
+    def to_html(self, content):
+        return self.markdown(content)
 
 
 def extract(fpath):
@@ -54,14 +55,14 @@ def extract(fpath):
             raise SystemExit('File with invalid yaml meta block: ' + fpath)
 
 
-def build_blog(markdown):
+def build_blog(renderer):
     for fname in os.listdir(blog_dir):
         fpath = absjoin(blog_dir, fname)
         if os.path.isfile(fpath) and is_allowed(fname):
             meta, content = extract(fpath)
-            html = markdown(content)
+            html = renderer.to_html(content)
             template = meta.get('layout', default_template)
-            templater = jinja_env.get_template(template)
+            templater = jinja_env.get_template(template + '.html')
             info = config.copy()
             info['content'] = html
             info.update(meta)
@@ -70,8 +71,16 @@ def build_blog(markdown):
 
 
 def main():
-    markdown = mistune.Markdown(renderer=HighlightRenderer())
-    build_blog(markdown)
+    plugins = config.get('plugins', [])
+    active_plugin = {'render': Render}
+    inject_plugin = lambda module, inject, type: active_plugin.update({type: getattr(module, inject)})
+
+    for plugin in plugins:
+        m = importlib.import_module(plugins_dir_name + '.' + plugin)
+        inject_plugin(module=m, **m.load_plugin())
+
+    renderer = active_plugin['render']()
+    build_blog(renderer)
 
 if __name__ == '__main__':
     main()
