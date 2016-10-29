@@ -3,9 +3,6 @@ import os
 import sys
 import yaml
 import mistune
-from pygments import highlight
-from pygments.lexers import get_lexer_by_name
-from pygments.formatters import html
 from jinja2 import Environment, FileSystemLoader
 
 ALLOWED = {'.md', '.mkd', '.markdown'}
@@ -24,16 +21,6 @@ default_template = config.get('layout', 'post.html')
 jinja_loader = FileSystemLoader(TEMPLATE_DIR)
 jinja_env = Environment(loader=jinja_loader)
 jinja_env.filters['datetimeformat'] = lambda x, y: x.strftime(y)
-
-
-class HighlightRenderer(mistune.Renderer):
-    def block_code(self, code, lang):
-        if not lang:
-            return '\n<pre><code>%s</code></pre>\n' % \
-                mistune.escape(code)
-        lexer = get_lexer_by_name(lang, stripall=True)
-        formatter = html.HtmlFormatter()
-        return highlight(code, lexer, formatter)
 
 
 def extract(fpath):
@@ -70,7 +57,7 @@ def build_blog(markdown):
 
 
 def main():
-    markdown = mistune.Markdown(renderer=HighlightRenderer())
+    markdown = mistune.Markdown()
     build_blog(markdown)
 
 if __name__ == '__main__':
