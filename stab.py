@@ -51,7 +51,7 @@ def extract(fpath):
             elif not meta_parsed: meta.append(line)
             else: content.append(line)
         try:
-            return yaml.load('\n'.join(meta)), '\n'.join(content)
+            return yaml.load('\n'.join(meta)), ''.join(content)
         except:
             raise SystemExit('File with invalid yaml meta block: ' + fpath)
 

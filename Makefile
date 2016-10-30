@@ -3,7 +3,7 @@ HTML=$(MD:.md=.html)
 
 .PHONY = clean backup deploy
 clean:
-	rm $(HTML)
+	@-/bin/rm $(HTML) 2>/dev/null
 
 backup:
 	tar --exclude=backup.tar.gz --exclude=.git/ \
@@ -11,6 +11,8 @@ backup:
 		-czvf backup.tar.gz ./
 
 deploy:
+	./stab.py 
 	rsync -avz --exclude '_*' --exclude '.git*' \
 		--exclude 'venv*' --exclude '*.md' \
-		`pwd`/ rogue@oxal.org:/var/www/website/public/
+		`pwd`/ oxal:/var/www/oxal.org/stab/ && \
+	$(MAKE) clean
