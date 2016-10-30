@@ -27,14 +27,10 @@ def extract(fpath):
     meta, content, first_line, meta_parsed = [], [], True, False
     with open(fpath) as fp:
         for line in fp:
-            if line.strip() == '---' and not meta_parsed:
-                if not first_line:
-                    meta_parsed = True
-                first_line = False
-            elif not meta_parsed:
-                meta.append(line)
-            else:
-                content.append(line)
+            if line.strip() == '---' and first_line: first_line = False
+            elif line.strip() == '---' and not first_line and not meta_parsed: meta_parsed = True
+            elif not meta_parsed: meta.append(line)
+            else: content.append(line)
         try:
             return yaml.load('\n'.join(meta)), '\n'.join(content)
         except:
