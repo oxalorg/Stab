@@ -7,6 +7,10 @@ from jinja2 import Environment, FileSystemLoader
 
 ALLOWED = {'.md', '.mkd', '.markdown'}
 is_allowed = lambda x: os.path.splitext(x)[1] in ALLOWED
+IGNORED = {'README.md'}
+is_ignored = lambda x: x in IGNORED
+DIR_IGNORED = {'_', '.'} #+ set(config.get('dir_ignored', []))
+dir_is_ignored = lambda x: any(os.path.basename(x).startswith(y) for y in DIR_IGNORED)
 
 absjoin = lambda x, y: os.path.abspath(os.path.join(x, y))
 ROOT_DIR = os.getcwd()
@@ -14,8 +18,8 @@ OUT_DIR = absjoin(ROOT_DIR, '_site')
 TEMPLATE_DIR = absjoin(ROOT_DIR, '_layouts')
 
 config = yaml.load(open(absjoin(ROOT_DIR, '_config.yml')).read())
-blog_dir_name = config.get('blog_dir', 'blog')
-blog_dir = absjoin(ROOT_DIR, blog_dir_name)
+build_dirs_name = config.get('build_dirs', 'blog')
+build_dirs = absjoin(ROOT_DIR, build_dirs_name)
 default_template = config.get('layout', 'post.html')
 
 jinja_loader = FileSystemLoader(TEMPLATE_DIR)
@@ -41,11 +45,12 @@ def extract(fpath):
             raise SystemExit('File with invalid yaml meta block: ' + fpath)
 
 
-def build_blog(markdown):
-    for root, dirs, files in os.walk(blog_dir):
+def build(markdown):
+    for root, dirs, files in os.walk(ROOT_DIR):
+        if dir_is_ignored(root): continue
         for fname in files:
             fpath = absjoin(root, fname)
-            if is_allowed(fname):
+            if is_allowed(fname) and not is_ignored(fname):
                 meta, content = extract(fpath)
                 html = markdown(content)
                 template = meta.get('layout', default_template)
@@ -59,7 +64,7 @@ def build_blog(markdown):
 
 def main():
     markdown = mistune.Markdown()
-    build_blog(markdown)
+    build(markdown)
 
 if __name__ == '__main__':
     main()
