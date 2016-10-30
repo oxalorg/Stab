@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os, sys, yaml, mistune
+from collections import defaultdict
 from jinja2 import Environment, FileSystemLoader
 
 ALLOWED = {'.md', '.mkd', '.markdown'}
@@ -36,25 +37,44 @@ def extract(fpath):
         except:
             raise SystemExit('File with invalid yaml meta block: ' + fpath)
 
-def build(markdown):
+def walk(markdown, func):
     for root, dirs, files in os.walk(ROOT_DIR):
         if dir_is_ignored(root): continue
         for fname in files:
             fpath = absjoin(root, fname)
             if is_allowed(fname) and not is_ignored(fname):
-                meta, content = extract(fpath)
-                html = markdown(content)
-                template = meta.get('layout', default_template)
-                templater = jinja_env.get_template(template)
-                info = config.copy()
-                info['content'] = html
-                info.update(meta)
-                with open(absjoin(root, os.path.splitext(fname)[0] + '.html'), 'w') as fp:
-                    fp.write(templater.render(info))
+                func(root, fname, fpath, markdown)
+
+
+site = defaultdict(list)
+site['pages'] = {}
+site['categories'] = defaultdict(list)
+site['tags'] = defaultdict(list)
+def build(root, fname, fpath, markdown):
+    page = site['pages'][os.path.relpath(fpath, ROOT_DIR)]
+    template = page.get('layout', default_template)
+    templater = jinja_env.get_template(template)
+    info = config.copy()
+    info['content'] = page['content']
+    info.update(page)
+    with open(absjoin(root, os.path.splitext(fname)[0] + '.html'), 'w') as fp:
+        fp.write(templater.render(info))
+
+
+def index(root, fname, fpath, markdown):
+    meta, text = extract(fpath)
+    meta.update({'text': text, 'content': markdown(text)})
+    page_id = os.path.relpath(fpath, ROOT_DIR)
+    site['pages'].update({ page_id: meta })
+    site['categories'][os.path.dirname(fpath)].append(page_id)
+    for tag in meta.get('tags', []):
+        site['tags'][tag].append(page_id)
+
 
 def main():
     markdown = mistune.Markdown()
-    build(markdown)
+    walk(markdown, index)
+    walk(markdown, build)
 
 if __name__ == '__main__':
     main()
