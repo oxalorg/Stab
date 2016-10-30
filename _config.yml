@@ -2,8 +2,8 @@ site_name: Stab
 site_desc: 'Stab: Start Blogging w/ Simple static blog generator'
 
 author: oxalorg
-# plugins:
-    # - highlight # Provides fenced_code_blocks with pygments code highlighting
+plugins:
+    - highlight # Provides fenced_code_blocks with pygments code highlighting
 
 # Default values
 # Can be removed from the config file

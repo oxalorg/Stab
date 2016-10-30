@@ -1,7 +1,11 @@
 # Stab
 
 Start blogging w/ this Simple static blog generator.
+
 Stab w/ Stab in only 64 lines of code.
+
+**Check out other branches for advanced plugin features**.
+Master branch is currently extremely minimal.
 
 ## RIGHT NOW.
 
