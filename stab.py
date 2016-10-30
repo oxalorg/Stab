@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-import os
-import sys
-import yaml
-import mistune
+import os, sys, yaml, mistune
 from jinja2 import Environment, FileSystemLoader
 
 ALLOWED = {'.md', '.mkd', '.markdown'}
@@ -26,7 +23,6 @@ jinja_loader = FileSystemLoader(TEMPLATE_DIR)
 jinja_env = Environment(loader=jinja_loader)
 jinja_env.filters['datetimeformat'] = lambda x, y: x.strftime(y)
 
-
 def extract(fpath):
     meta, content, first_line, meta_parsed = [], [], True, False
     with open(fpath) as fp:
@@ -44,7 +40,6 @@ def extract(fpath):
         except:
             raise SystemExit('File with invalid yaml meta block: ' + fpath)
 
-
 def build(markdown):
     for root, dirs, files in os.walk(ROOT_DIR):
         if dir_is_ignored(root): continue
@@ -60,7 +55,6 @@ def build(markdown):
                 info.update(meta)
                 with open(absjoin(root, os.path.splitext(fname)[0] + '.html'), 'w') as fp:
                     fp.write(templater.render(info))
-
 
 def main():
     markdown = mistune.Markdown()
