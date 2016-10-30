@@ -42,18 +42,19 @@ def extract(fpath):
 
 
 def build_blog(markdown):
-    for fname in os.listdir(blog_dir):
-        fpath = absjoin(blog_dir, fname)
-        if os.path.isfile(fpath) and is_allowed(fname):
-            meta, content = extract(fpath)
-            html = markdown(content)
-            template = meta.get('layout', default_template)
-            templater = jinja_env.get_template(template)
-            info = config.copy()
-            info['content'] = html
-            info.update(meta)
-            with open(absjoin(blog_dir, os.path.splitext(fname)[0] + '.html'), 'w') as fp:
-                fp.write(templater.render(info))
+    for root, dirs, files in os.walk(blog_dir):
+        for fname in files:
+            fpath = absjoin(root, fname)
+            if is_allowed(fname):
+                meta, content = extract(fpath)
+                html = markdown(content)
+                template = meta.get('layout', default_template)
+                templater = jinja_env.get_template(template)
+                info = config.copy()
+                info['content'] = html
+                info.update(meta)
+                with open(absjoin(root, os.path.splitext(fname)[0] + '.html'), 'w') as fp:
+                    fp.write(templater.render(info))
 
 
 def main():
