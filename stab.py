@@ -18,7 +18,7 @@ TEMPLATE_DIR = absjoin(ROOT_DIR, '_layouts')
 config = yaml.load(open(absjoin(ROOT_DIR, '_config.yml')).read())
 build_dirs_name = config.get('build_dirs', 'blog')
 build_dirs = absjoin(ROOT_DIR, build_dirs_name)
-default_template = config.get('layout', 'post.html')
+default_template = config.get('layout', 'post')
 
 jinja_loader = FileSystemLoader(TEMPLATE_DIR)
 jinja_env = Environment(loader=jinja_loader)
@@ -52,7 +52,7 @@ site['categories'] = defaultdict(list)
 site['tags'] = defaultdict(list)
 def build(root, fname, fpath, markdown):
     page = site['pages'][os.path.relpath(fpath, ROOT_DIR)]
-    template = page.get('layout', default_template)
+    template = page.get('layout', default_template) + '.html'
     templater = jinja_env.get_template(template)
     info = config.copy()
     info['content'] = page['content']
@@ -63,10 +63,11 @@ def build(root, fname, fpath, markdown):
 
 def index(root, fname, fpath, markdown):
     meta, text = extract(fpath)
-    meta.update({'text': text, 'content': markdown(text)})
     page_id = os.path.relpath(fpath, ROOT_DIR)
+    category = os.path.dirname(page_id)
+    meta.update({'text': text, 'content': markdown(text), 'category': category, 'slug': os.path.splitext(fname)[0]})
     site['pages'].update({ page_id: meta })
-    site['categories'][os.path.dirname(fpath)].append(page_id)
+    site['categories'][category].append(page_id)
     for tag in meta.get('tags', []):
         site['tags'][tag].append(page_id)
 
@@ -74,6 +75,9 @@ def index(root, fname, fpath, markdown):
 def main():
     markdown = mistune.Markdown()
     walk(markdown, index)
+    jinja_env.globals = {'site': site}
+    from pprint import pprint
+    # pprint(site)
     walk(markdown, build)
 
 if __name__ == '__main__':
