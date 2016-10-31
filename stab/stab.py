@@ -19,6 +19,7 @@ build_dirs_name = config.get('build_dirs', 'blog')
 build_dirs = absjoin(ROOT_DIR, build_dirs_name)
 default_template = config.get('layout', 'post')
 plugins_dir_name = config.get('plugins_dir', '_plugins')
+plugins_dir = absjoin(ROOT_DIR, plugins_dir_name)
 
 jinja_loader = FileSystemLoader(TEMPLATE_DIR)
 jinja_env = Environment(loader=jinja_loader)
@@ -91,8 +92,9 @@ def main():
     active_plugin = {'render': Render}
     inject_plugin = lambda module, inject, type: active_plugin.update({type: getattr(module, inject)})
 
+    sys.path.append(plugins_dir)
     for plugin in plugins:
-        m = importlib.import_module(plugins_dir_name + '.' + plugin)
+        m = importlib.import_module(plugin)
         inject_plugin(module=m, **m.load_plugin())
 
     renderer = active_plugin['render']()
