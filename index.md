@@ -1,8 +1,12 @@
-# Stab
+---
+title: Welcome to Stab
+index: False
+layout: index
+---
 
 Start blogging w/ this Simple static blog generator.
 
-Stab w/ Stab in less than ***128 lines of code***.
+Stab w/ Stab in less that ***128 lines of code***.
 
 **Check out other branches for advanced plugin features**.
 Master branch is currently extremely minimal.

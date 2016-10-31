@@ -23,16 +23,15 @@
 </head>
 
 <body>
-    <header>
-        <nav>
-            <a class="sakura-blossom no-border" href="{{ site_baseurl }}/">{{ site_name }}</a> ::
-            <a class="sakura-fade no-border" href="{{ site_baseurl }}/o/">/o/</a>
-            <a class="sakura-fade no-border" href="{{ site_baseurl }}/about/">about</a>
-        </nav>
-    </header>
-    <main>
-        {% block body %}{% endblock %}
-    </main>
-
+<header>
+    <nav>
+        <a class="sakura-blossom no-border" href="{{ site_baseurl }}/">{{ site_name }}</a> ::
+        <a class="sakura-fade no-border" href="{{ site_baseurl }}/blog/">blog</a>
+        <a class="sakura-fade no-border" href="{{ site_baseurl }}/about/">about</a>
+    </nav>
+</header>
+<main>
+    {%- block body -%}{%- endblock -%}
+</main>
 </body>
 </html>
