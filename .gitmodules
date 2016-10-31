@@ -1,0 +1,3 @@
+[submodule "stab-site"]
+	path = stab-site
+	url = git@github.com:oxalorg/Stab-site.git
