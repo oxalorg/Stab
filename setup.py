@@ -3,7 +3,7 @@ from stab import __version__
 
 proj = 'stab'
 desc = 'Start blogging with this simple static site generator'
-deps = ['pyyaml', 'mistune', 'jinja',]
+deps = ['pyyaml', 'mistune', 'jinja2']
 
 setup(
     name=proj,
