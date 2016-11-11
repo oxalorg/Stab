@@ -1,4 +1,4 @@
-__version__ = '0.3.1'
+__version__ = '1.0.0'
 
-def cli():
-    from stab import stab
+from stab import stab
+cli = stab.cli
