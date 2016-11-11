@@ -1,4 +1,5 @@
 .venv/
+dist/
 distribute.sh
 server.py
 build/
