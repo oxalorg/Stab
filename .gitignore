@@ -1,2 +1,6 @@
 .venv/
+distribute.sh
+server.py
+build/
+stab.egg-info
 __pycache__/
