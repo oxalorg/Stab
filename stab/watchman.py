@@ -18,7 +18,6 @@ class Watchman():
                 self.prev_mtime = json.load(fp)
         except ValueError:
             self.prev_mtime = {}
-        print(self.prev_mtime)
         logging.info("Read mtime stored during the previous build.")
 
 
