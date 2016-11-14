@@ -6,8 +6,6 @@ absjoin = lambda x, y: os.path.abspath(os.path.join(x, y))
 
 
 class Stab:
-    ALLOWED, IGNORED = [], []
-
     def __init__(self, ROOT_DIR):
         self.ROOT_DIR = os.path.abspath(ROOT_DIR)
         self.set_defaults()
@@ -53,6 +51,7 @@ class Stab:
                     func(fname, fpath)
 
     def index(self, fname, fpath):
+        logging.info("Indexing file: {}".format(fname))
         meta, text = self._extract(fpath)
         page_id = os.path.relpath(fpath, self.ROOT_DIR)
         category = os.path.dirname(page_id)
@@ -63,14 +62,16 @@ class Stab:
             self.site['tags'][tag].append(page_id)
 
     def build(self, fname, fpath):
+        logging.info("Building file: {}".format(fname))
         page = self.site['pages'][os.path.relpath(fpath, self.ROOT_DIR)]
         template = page.get('layout', self.default_template) + '.html'
         templater = self.jinja_env.get_template(template)
         info = self.config.copy()
         info['content'] = page['content']
         info.update(page)
-        with open(os.path.splitext(fpath)[0] + '.html', 'w') as fp:
-            # TODO: Logging
+        out_fpath = os.path.splitext(fpath)[0] + '.html';
+        with open(out_fpath, 'w') as fp:
+            logging.info("Writing to file: {}".format(out_fpath))
             fp.write(templater.render(info))
 
     def _extract(self, fpath):
@@ -95,11 +96,14 @@ def cli():
     parser = argparse.ArgumentParser()
     parser.add_argument('ROOT_DIR', help='Stab this directory')
     opts = parser.parse_args()
+    logging.basicConfig(filename=absjoin(opts.ROOT_DIR, '_stab.log'), filemode='w', level=logging.DEBUG)
+    logging.info("Starting stab..")
     stab = Stab(opts.ROOT_DIR)
     t_start = time.time()
     stab.main()
     print("Site built in \033[43m\033[31m{:0.3f}\033[0m\033[49m seconds. That's quite fast, ain't it?".format(time.time() - t_start))
     print("Built: {} pages.".format(len(stab.site['pages'])))
+    logging.info("Finished. Exiting...")
 
 
 if __name__ == '__main__':
