@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os, sys, yaml, mistune, importlib, collections, argparse, logging, time
 from jinja2 import Environment, FileSystemLoader
+from stab.watchman import Watchman
 
 absjoin = lambda x, y: os.path.abspath(os.path.join(x, y))
 
@@ -12,6 +13,8 @@ class Stab:
         self.set_utils()
         self.init_site()
         self.init_jinja()
+        self.watchman = Watchman(self.ROOT_DIR, self.INCREMENTAL, self.default_template)
+        self.mtimes = {}
         self.md2html = mistune.Markdown()
 
     def set_defaults(self):
@@ -20,6 +23,7 @@ class Stab:
         self.ALLOWED = set(self.config.get('allowed', []))
         self.IGNORED = set(self.config.get('ignored', []))
         self.DIR_IGNORED = {'_', '.'} | set(self.config.get('dir_ignored', []))
+        self.INCREMENTAL = self.config.get('incremental', [])
 
     def set_utils(self):
         self.is_allowed = lambda x: os.path.splitext(x)[1] in self.ALLOWED
@@ -60,15 +64,19 @@ class Stab:
         self.site['categories'][category].append(page_id)
         for tag in meta.get('tags', []):
             self.site['tags'][tag].append(page_id)
+        self.mtimes[fpath] = os.path.getmtime(fpath)
 
     def build(self, fname, fpath):
         logging.info("Building file: {}".format(fname))
         page = self.site['pages'][os.path.relpath(fpath, self.ROOT_DIR)]
+        if not self.watchman.should_build(fpath, page):
+            logging.info("Incremental build. Skipping this file: {}".format(fname))
+            return
+        info = self.config.copy()
+        info.update(page)
         template = page.get('layout', self.default_template) + '.html'
         templater = self.jinja_env.get_template(template)
-        info = self.config.copy()
         info['content'] = page['content']
-        info.update(page)
         out_fpath = os.path.splitext(fpath)[0] + '.html';
         with open(out_fpath, 'w') as fp:
             logging.info("Writing to file: {}".format(out_fpath))
@@ -90,6 +98,7 @@ class Stab:
     def main(self):
         self.walk(self.index)
         self.walk(self.build)
+        self.watchman.sleep(self.mtimes)
 
 
 def cli():
