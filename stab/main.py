@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, sys, yaml, mistune, importlib, collections, argparse, logging, time
+import os, sys, yaml, mistune, importlib, collections, argparse, logging, time, datetime
 from jinja2 import Environment, FileSystemLoader
 from stab.watchman import Watchman
 
@@ -7,12 +7,13 @@ absjoin = lambda x, y: os.path.abspath(os.path.join(x, y))
 
 
 class Stab:
-    def __init__(self, ROOT_DIR):
+    def __init__(self, ROOT_DIR, force):
         self.ROOT_DIR = os.path.abspath(ROOT_DIR)
         self.set_defaults()
         self.set_utils()
         self.init_site()
         self.init_jinja()
+        self.force_build = force
         self.watchman = Watchman(self.ROOT_DIR, self.INCREMENTAL, self.default_template)
         self.mtimes = {}
         self.md2html = mistune.Markdown()
@@ -33,6 +34,7 @@ class Stab:
     def init_site(self):
         self.site = collections.defaultdict(list)
         self.site['pages'] = {}
+        self.site['ord_pages'] = []
         self.site['categories'] = collections.defaultdict(list)
         self.site['tags'] = collections.defaultdict(list)
 
@@ -69,7 +71,7 @@ class Stab:
     def build(self, fname, fpath):
         logging.info("Building file: {}".format(fname))
         page = self.site['pages'][os.path.relpath(fpath, self.ROOT_DIR)]
-        if not self.watchman.should_build(fpath, page):
+        if not self.force_build and not self.watchman.should_build(fpath, page):
             logging.info("Incremental build. Skipping this file: {}".format(fname))
             return
         info = self.config.copy()
@@ -97,6 +99,7 @@ class Stab:
 
     def main(self):
         self.walk(self.index)
+        self.site['ord_pages'] = sorted(self.site['pages'].values(), key=lambda k: k.get('date', datetime.date(1,1,1)), reverse=True)
         self.walk(self.build)
         self.watchman.sleep(self.mtimes)
 
@@ -104,10 +107,11 @@ class Stab:
 def cli():
     parser = argparse.ArgumentParser()
     parser.add_argument('ROOT_DIR', help='Stab this directory')
+    parser.add_argument('-f', '--force', action='store_true', help='Force build. Ignores INCREMENTAL templates.')
     opts = parser.parse_args()
     logging.basicConfig(filename=absjoin(opts.ROOT_DIR, '_stab.log'), filemode='w', level=logging.DEBUG)
     logging.info("Starting stab..")
-    stab = Stab(opts.ROOT_DIR)
+    stab = Stab(opts.ROOT_DIR, opts.force)
     t_start = time.time()
     stab.main()
     print("Site built in \033[43m\033[31m{:0.3f}\033[0m\033[49m seconds. That's quite fast, ain't it?".format(time.time() - t_start))
