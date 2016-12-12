@@ -54,21 +54,26 @@ class Stab:
             for fname in files:
                 fpath = absjoin(root, fname)
                 if self.is_allowed(fname) and not self.is_ignored(fname):
-                    func(fname, fpath)
+                    func(fname, fpath, root)
 
-    def index(self, fname, fpath):
+    def index(self, fname, fpath, root):
         logging.info("Indexing file: {}".format(fname))
         meta, text = self._extract(fpath)
         page_id = os.path.relpath(fpath, self.ROOT_DIR)
-        category = os.path.dirname(page_id)
-        meta.update({'text': text, 'content': self.render(text), 'category': category, 'slug': os.path.splitext(fname)[0]})
+        if fname == 'index.md' and root != self.ROOT_DIR:
+            category = os.path.dirname(os.path.dirname(page_id))
+            slug = os.path.splitext(os.path.dirname(page_id))[0]
+        else:
+            category = os.path.dirname(page_id)
+            slug = os.path.splitext(fname)[0]
+        meta.update({'text': text, 'content': self.render(text), 'category': category, 'slug': slug})
         self.site['pages'].update({ page_id: meta })
         self.site['categories'][category].append(page_id)
         for tag in meta.get('tags', []):
             self.site['tags'][tag].append(page_id)
         self.mtimes[fpath] = os.path.getmtime(fpath)
 
-    def build(self, fname, fpath):
+    def build(self, fname, fpath, root):
         logging.info("Building file: {}".format(fname))
         page = self.site['pages'][os.path.relpath(fpath, self.ROOT_DIR)]
         if not self.force_build and not self.watchman.should_build(fpath, page):
